@@ -25,15 +25,32 @@ from itertools import groupby
 #
 def load_input(input_directory):
     """Funcion load_input"""
+    return [
+        (file, line)
+        for file in glob.glob(f"{input_directory}/*.txt")
+        for line in fileinput.input(file)
+    ]
 
+
+print(*load_input("files/input"), end="\n")
 
 #
 # Escriba la función line_preprocessing que recibe una lista de tuplas de la
 # función anterior y retorna una lista de tuplas (clave, valor). Esta función
 # realiza el preprocesamiento de las líneas de texto,
 #
-def line_preprocessing(sequence):
-    """Line Preprocessing"""
+# def line_preprocessing(sequence):
+#     """Line Preprocessing"""
+
+#     output = []
+#     for key, group in groupby(sequence, lambda x: x[0]):
+#         lines = [line for _, line in group]
+#         text = " ".join(lines)
+#         output.append((key, text))
+    
+#     return output
+
+# print(len(line_preprocessing(load_input("files/input"))))
 
 
 #
@@ -50,6 +67,11 @@ def line_preprocessing(sequence):
 #
 def mapper(sequence):
     """Mapper"""
+    new_sequence = []
+    for _, text in sequence:
+        for word in text.split():
+            new_sequence.append((word, 1))
+    return new_sequence
 
 
 #
@@ -65,6 +87,8 @@ def mapper(sequence):
 #
 def shuffle_and_sort(sequence):
     """Shuffle and Sort"""
+    sorted_sequence = sorted(sequence, key=lambda x: x[0].lower())
+    return sorted_sequence
 
 
 #
@@ -75,6 +99,11 @@ def shuffle_and_sort(sequence):
 #
 def reducer(sequence):
     """Reducer"""
+    cuenta = {}
+    for key, value in sequence:
+        key = key.lower().strip("., ")
+        cuenta[key] = cuenta.get(key, 0) + value
+    return list(cuenta.items())
 
 
 #
@@ -83,6 +112,10 @@ def reducer(sequence):
 #
 def create_ouptput_directory(output_directory):
     """Create Output Directory"""
+    try:
+        os.mkdir(output_directory)
+    except FileExistsError:
+        print(f"El directorio {output_directory} ya existe.")
 
 
 #
@@ -95,6 +128,10 @@ def create_ouptput_directory(output_directory):
 #
 def save_output(output_directory, sequence):
     """Save Output"""
+    create_ouptput_directory(output_directory)
+    with open(output_directory + "/part-00000", "w") as f:
+        for key, value in sequence:
+            f.write(f"{key}\t{value}\n")
 
 
 #
@@ -103,6 +140,8 @@ def save_output(output_directory, sequence):
 #
 def create_marker(output_directory):
     """Create Marker"""
+    with open(output_directory + "/_SUCCESS", "w") as f:
+        pass
 
 
 #
@@ -110,6 +149,12 @@ def create_marker(output_directory):
 #
 def run_job(input_directory, output_directory):
     """Job"""
+    sequence = load_input(input_directory)
+    sequence = mapper(sequence)
+    sequence = shuffle_and_sort(sequence)
+    sequence = reducer(sequence)
+    save_output(output_directory, sequence)
+    create_marker(output_directory)
 
 
 if __name__ == "__main__":
